@@ -72,8 +72,12 @@ execute with any other model, the skill hands the plan to an installed agent CLI
 | [Codex CLI](https://github.com/openai/codex) | install and log in | `codex:<model>` |
 | [Gemini CLI](https://github.com/google-gemini/gemini-cli) | install and log in | `gemini:<model>` |
 
-The skill finds installed CLIs and their models (`opencode models`) and offers them next to
-the Claude tiers. External CLIs run with their own permissions (Codex `--full-auto`,
+Qwen Code and Aider are supported too. The skill lists every provider it can reach (Claude
+Code tiers, installed CLIs with their connected providers and models, provider API keys in
+the environment, local Ollama models) and offers them next to the Claude tiers. If the model
+you want needs a CLI that isn't installed, it asks and installs it for you (or gives you the
+command), then tells you how to log in to the provider yourself. It never handles your
+API keys. See `skills/plan-and-delegate/references/backends.md`. External CLIs run with their own permissions (Codex `--full-auto`,
 Gemini `--yolo`), so review the plan before delegating.
 
 ## Layout
@@ -83,7 +87,7 @@ skills/plan-and-delegate/
 ├── SKILL.md
 ├── agents/{executor,reviewer}.md
 ├── scripts/{detect_provider,install_agents,run_external}.sh
-└── references/handoff-template.md
+└── references/{handoff-template,backends}.md
 ```
 
 ## Tips

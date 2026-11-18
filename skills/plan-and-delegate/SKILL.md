@@ -27,9 +27,12 @@ this file, e.g. `~/.claude/skills/plan-and-delegate` or `<project>/.claude/skill
    It prints two kinds of executors:
    - **Claude Code subagents**: the session provider and the model ID each tier
      (opus/sonnet/haiku) maps to. Don't offer a tier marked `unavailable`.
-   - **External agent CLIs** (OpenCode, Codex, Gemini) with the models they list. These
-     reach other providers (e.g. OpenCode Go, OpenRouter, DeepSeek, OpenAI, Google).
-   Plus saved preferences, if any.
+   - **External agent CLIs** (OpenCode, Codex, Gemini, Qwen Code, Aider): which are
+     installed, their connected providers and models, and which are not installed.
+     These reach other providers (OpenCode Go, OpenRouter, DeepSeek, OpenAI, Google...).
+   - **Provider API keys** present in the environment (names only) and local Ollama models.
+   Plus saved preferences and whether npm/python3/curl exist.
+   Summarize all available providers for the user in a short table before asking.
 
    Subagents can only use the Claude Code session's provider. A model from any other
    provider runs through an external CLI. Never tell the user a model is unavailable
@@ -50,9 +53,26 @@ Otherwise ask with your question tool (AskUserQuestion), all in one call:
    models found (label like `opencode: opencode-go/deepseek-v4.1-flash`; if many, offer
    the cheapest/most relevant few and let the user type any listed ID).
    Recommend `haiku` for mechanical/repetitive edits, `sonnet` for code needing real skill.
-   If the user names a model that is in neither list, say which backend could serve it
-   and how to set it up (e.g. install OpenCode, `/connect` the provider, check
-   `opencode models`), then ask again. Don't silently fall back to a Claude model.
+   If the user names a model that is in neither list, go to **Step 1b**.
+   Don't silently fall back to a Claude model.
+
+## Step 1b: Install or connect a backend (only when needed)
+
+Use `SKILL_DIR/references/backends.md` to find the backend for the requested provider.
+
+1. **CLI not installed:** ask the user (one question) with options:
+   `Install <cli> for me (recommended)` (show the exact command), `I'll install it myself`,
+   `Pick a different model`.
+   - If they approve, run the official install command from `backends.md`, then verify
+     with `<cli> --version`. If it fails (EACCES, no npm), explain the fix from
+     `backends.md`, offer to apply it, and retry once.
+   - If they'll do it themselves, give the exact command and wait for them to say done.
+2. **Provider not connected** (missing from `opencode auth list` / not logged in):
+   login needs the user's credentials, so never ask for, type or store API keys yourself.
+   Tell the user the exact command to run in their own terminal (e.g. `opencode auth login`
+   and pick OpenCode Go, or `codex login`), and wait for them.
+3. Re-run `detect_provider.sh` and confirm the requested model is now listed. Then
+   continue with Step 1 using it.
 2. **Reviewer**: "Should another model review the result?"
    Options: `No review`, plus each available tier. Recommend `sonnet`.
 3. **Planner**: "Planning runs on the current session model (<session_model>). Continue?"
@@ -88,10 +108,12 @@ Claude Code, or do the work yourself if they prefer.
 1. Write the handoff to a temp file, e.g. `/tmp/pad-handoff-<n>.md`.
 2. Run `bash SKILL_DIR/scripts/run_external.sh <backend> <model> <file> <project dir>`
    with a generous timeout (10+ minutes); run it in the background for long chunks.
+   Exit code 127 means the CLI is missing: go back to Step 1b.
+   An auth/401 error means the provider isn't connected: Step 1b, item 2.
 3. Treat its output like the executor's report. If it doesn't end in the
    `STATUS:` format, check the diff yourself to find out what was done.
 The external CLI runs with its own permission settings (OpenCode uses its config; Codex
-runs with `--full-auto`, Gemini with `--yolo`). Tell the user this before the first run.
+runs with `--full-auto`, Gemini and Qwen with `--yolo`, Aider with `--yes-always`). Tell the user this before the first run.
 For tasks that act outside the repo (browsing, submitting forms, sending anything),
 prefer a Claude Code subagent, or require the handoff to stop before any irreversible step.
 
