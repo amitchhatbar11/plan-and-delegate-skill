@@ -90,6 +90,13 @@ in your own terminal. See `references/telegram-setup.md`. The agent never sees t
 
 Claude Code's own tool-permission prompts still appear only in the terminal.
 
+## Browser automation: Playwright
+
+All browser work (reading pages, filling forms, uploads) uses Playwright: the Playwright MCP
+server when configured (`claude mcp add playwright -- npx -y @playwright/mcp@latest`),
+otherwise small Playwright scripts. The skill asks once before using or setting it up, then
+remembers your answer. Logins, CAPTCHAs and 2FA are always handed back to you.
+
 ## File uploads
 
 When a browser form needs a file (resume, cover letter, document), the skill uses a path you

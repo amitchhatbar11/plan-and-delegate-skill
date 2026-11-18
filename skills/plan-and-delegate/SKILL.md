@@ -4,8 +4,8 @@ description: >
   Plan with a strong model, execute with a cheaper one. Detects every provider and model the
   user can reach (Claude Code tiers, OpenCode, Codex, Gemini, Qwen, Aider, API keys, Ollama),
   asks once which model plays each role, makes all design decisions in the main session,
-  hands self-contained plans to an executor and optional reviewer, uploads files from a
-  known folder when a browser form needs them, and can send progress updates and ask for
+  hands self-contained plans to an executor and optional reviewer, uses Playwright for all
+  browser automation, uploads files from a known folder when a form needs them, and can send progress updates and ask for
   confirmations over Telegram. Use when the user invokes /plan-and-delegate, asks to "plan
   with X and execute with Y", or wants to save cost on a multi-step task.
 ---
@@ -22,7 +22,8 @@ Preferences live in `~/.claude/plan-and-delegate.json`:
   "executor": "<tier | backend:model>",
   "reviewer": "<tier | backend:model | none>",
   "notify": "telegram | manual",
-  "upload_dir": "~/Documents/uploads"
+  "upload_dir": "~/Documents/uploads",
+  "browser": "playwright"
 }
 ```
 
@@ -137,6 +138,41 @@ step (or do it yourself).
 Independent chunks may run in parallel. With Telegram on, send a one-line update after
 each chunk (`✓ chunk 2/4: filled form for Acme`) and on any failure.
 
+## Browser automation: always Playwright
+
+Use **Playwright** for every kind of browser access: opening pages, reading, filling
+forms, clicking, uploading files, screenshots. Don't use other browser tools, scraping
+libraries or raw HTTP for pages that need a browser.
+
+**Confirm once.** The first time a task needs a browser, if `browser` isn't `playwright`
+in the preferences, ask one question: `Use Playwright for browser steps (recommended)` /
+`Not now`. If Playwright isn't set up, the same question includes the setup commands below
+and approval covers running them. On yes, save `"browser": "playwright"` and don't ask
+again. On "not now", skip the browser steps and list them in the report.
+
+**Which way to run it** (`detect_provider.sh` shows what's available):
+1. **Playwright MCP** (preferred: interactive, works for subagents):
+   `claude mcp add playwright -- npx -y @playwright/mcp@latest`
+   (takes effect after a Claude Code restart; tools are named `browser_*`, e.g.
+   `browser_navigate`, `browser_snapshot`, `browser_fill_form`, `browser_click`,
+   `browser_file_upload`).
+2. **Playwright library scripts** (fallback, and for external executors): write a short
+   Node script using `playwright` and run it with `node`. Setup:
+   `npm i -D playwright && npx playwright install chromium` in a working folder
+   (`~/.cache/plan-and-delegate/pw` if the project isn't a Node project).
+   Use `page.setInputFiles(selector, path)` for uploads.
+
+Rules for browser steps in handoffs:
+- Name the Playwright tool or API for each step (e.g. "`browser_file_upload` with
+  `/abs/resume.pdf`", "`page.getByLabel('Email').fill(...)`").
+- Prefer role/label locators over CSS; take a snapshot before acting on a new page.
+- Use a persistent profile folder (`--user-data-dir` for MCP, or
+  `chromium.launchPersistentContext(dir)`) when the site needs the user's login. If a
+  login, CAPTCHA or 2FA appears, stop and ask the user to complete it (via Telegram if on);
+  never type passwords or solve CAPTCHAs.
+- External CLI executors use Playwright only if their own config has the Playwright MCP
+  or they run the scripts above. Otherwise keep browser chunks on a Claude Code subagent.
+
 ## File uploads (browser forms and attachments)
 
 When a step needs a file (resume, cover letter, ID, image, document), resolve it in this order:
@@ -152,8 +188,9 @@ if two files fit equally well and differ in content. If nothing matches, ask onc
 path and offer to save its folder as `upload_dir`.
 
 In the handoff, give the absolute path and exactly which field it goes in. The executor
-uploads it with the browser tool's file-upload/set-input-files action on the file
-`<input>` (never by typing the path or dragging), then checks the page shows the file name.
+uploads it with Playwright (`browser_file_upload` in the MCP, or `page.setInputFiles` in
+a script) on the file `<input>` (never by typing the path or dragging), then checks the
+page shows the file name.
 Never upload a file the plan didn't name.
 
 ## Confirmations

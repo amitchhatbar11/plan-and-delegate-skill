@@ -61,6 +61,18 @@ command -v ollama >/dev/null && { echo "local: ollama models:"; t ollama list 2>
 PREF="$HOME/.claude/plan-and-delegate.json"
 echo
 [ -f "$PREF" ] && echo "saved_preferences: $(tr -d '\n' < "$PREF")"
+echo
+echo "== Browser automation (Playwright) =="
+if command -v claude >/dev/null && claude mcp list 2>/dev/null | grep -qi playwright; then
+  echo "playwright_mcp: configured in Claude Code"
+else
+  echo "playwright_mcp: not configured (claude mcp add playwright -- npx -y @playwright/mcp@latest)"
+fi
+PW=""
+for d in . "$HOME/.cache/plan-and-delegate/pw"; do [ -d "$d/node_modules/playwright" ] && PW="$d"; done
+[ -n "$PW" ] && echo "playwright_lib: installed in $PW" || echo "playwright_lib: not installed"
+ls -d "$HOME/.cache/ms-playwright/"chromium* >/dev/null 2>&1 && echo "playwright_browsers: chromium installed" || echo "playwright_browsers: none"
+echo
 if command -v python3 >/dev/null; then python3 -I "$(dirname "$0")/telegram.py" status 2>/dev/null; else echo "telegram: needs python3"; fi
 echo "tools: npm=$(command -v npm >/dev/null && echo yes || echo no) python3=$(command -v python3 >/dev/null && echo yes || echo no) curl=$(command -v curl >/dev/null && echo yes || echo no)"
 exit 0
