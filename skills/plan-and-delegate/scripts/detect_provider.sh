@@ -61,5 +61,6 @@ command -v ollama >/dev/null && { echo "local: ollama models:"; t ollama list 2>
 PREF="$HOME/.claude/plan-and-delegate.json"
 echo
 [ -f "$PREF" ] && echo "saved_preferences: $(tr -d '\n' < "$PREF")"
+if command -v python3 >/dev/null; then python3 -I "$(dirname "$0")/telegram.py" status 2>/dev/null; else echo "telegram: needs python3"; fi
 echo "tools: npm=$(command -v npm >/dev/null && echo yes || echo no) python3=$(command -v python3 >/dev/null && echo yes || echo no) curl=$(command -v curl >/dev/null && echo yes || echo no)"
 exit 0

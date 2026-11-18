@@ -80,14 +80,35 @@ command), then tells you how to log in to the provider yourself. It never handle
 API keys. See `skills/plan-and-delegate/references/backends.md`. External CLIs run with their own permissions (Codex `--full-auto`,
 Gemini `--yolo`), so review the plan before delegating.
 
+## Telegram updates and confirmations (optional)
+
+During the first run, choose **Telegram** or **Manual in this chat**. With Telegram, you get
+one-line progress updates, and every step that can't be undone (submit, send, pay, delete)
+is confirmed with Yes/No buttons on your phone. Setup takes two minutes: create a bot with
+@BotFather, then run `python3 ~/.claude/skills/plan-and-delegate/scripts/telegram.py setup`
+in your own terminal. See `references/telegram-setup.md`. The agent never sees the token.
+
+Claude Code's own tool-permission prompts still appear only in the terminal.
+
+## File uploads
+
+When a browser form needs a file (resume, cover letter, document), the skill uses a path you
+gave, or finds the best match in your `upload_dir` folder (default `~/Documents/uploads`),
+and uploads it through the file input. It asks only if two files fit equally well.
+
+## Fewer questions
+
+The planner makes the obvious, reversible decisions on its own and lists them in the final
+report. It asks only for irreversible actions, credentials or money, or real preference calls.
+
 ## Layout
 
 ```
 skills/plan-and-delegate/
 ├── SKILL.md
 ├── agents/{executor,reviewer}.md
-├── scripts/{detect_provider,install_agents,run_external}.sh
-└── references/{handoff-template,backends}.md
+├── scripts/{detect_provider,install_agents,run_external,find_upload}.sh, telegram.py
+└── references/{handoff-template,backends,telegram-setup}.md
 ```
 
 ## Tips
