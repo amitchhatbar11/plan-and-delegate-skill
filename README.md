@@ -61,13 +61,28 @@ Tiers (`opus` / `sonnet` / `haiku`) resolve to your provider's model IDs. Overri
 }
 ```
 
+## Executors on other providers (OpenCode Go, DeepSeek, OpenAI, Gemini...)
+
+Claude Code subagents can only use the provider your Claude Code session runs on. To
+execute with any other model, the skill hands the plan to an installed agent CLI:
+
+| Backend | Setup | Example executor choice |
+|---|---|---|
+| [OpenCode](https://opencode.ai) | install, then `/connect` your provider (e.g. OpenCode Go) | `opencode:opencode-go/deepseek-v4.1-flash` |
+| [Codex CLI](https://github.com/openai/codex) | install and log in | `codex:<model>` |
+| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | install and log in | `gemini:<model>` |
+
+The skill finds installed CLIs and their models (`opencode models`) and offers them next to
+the Claude tiers. External CLIs run with their own permissions (Codex `--full-auto`,
+Gemini `--yolo`), so review the plan before delegating.
+
 ## Layout
 
 ```
 skills/plan-and-delegate/
 ├── SKILL.md
 ├── agents/{executor,reviewer}.md
-├── scripts/{detect_provider,install_agents}.sh
+├── scripts/{detect_provider,install_agents,run_external}.sh
 └── references/handoff-template.md
 ```
 
